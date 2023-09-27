@@ -6,3 +6,9 @@ services:
     ports:
       - "7085:7085"
     container_name: upsService
+    volumes:
+      - ./app:/app/app
+      - ./dominio:/app/dominio
+      - ./repositorio:/app/repositorio
+      - ./service:/app/service
+      - ./test:/app/test
