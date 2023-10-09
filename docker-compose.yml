@@ -5,7 +5,7 @@ services:
       context: .
     ports:
       - "7085:7085"
-    container_name: upsService
+    container_name: UpsService
     volumes:
       - ./app:/app/app
       - ./dominio:/app/dominio
