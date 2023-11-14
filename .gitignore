@@ -367,3 +367,7 @@ FodyWeavers.xsd
 /cov.sh
 
 .vscode/
+
+app/build/
+scripts/.venv/
+scripts/target
