@@ -11,6 +11,8 @@ using app.Controllers;
 using Service.Interfaces;
 using Service;
 using auth;
+using app.DI;
+using test.Mock;
 
 namespace test.Fixtures
 {
@@ -30,11 +32,15 @@ namespace test.Fixtures
             services.AddScoped<IUpsService, UpsService>();
             services.AddScoped<IRodoviaService, RodoviaService>();
 
+            services.AddScoped<IEscolaService, EscolaServiceFake>();
+
+            services.AddHttpClient<IEscolaService, EscolaServiceFake>();
+
             services.AddScoped<SinistroController>();
             services.AddScoped<RodoviaController>();
             services.AddScoped<UpsController>();
 
-            services.AddAuth(configuration);
+            services.AddAuth(configuration!);
         }
 
         protected override ValueTask DisposeAsyncCore() => new();

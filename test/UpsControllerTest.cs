@@ -1,3 +1,4 @@
+using api.Ups;
 using app.Controllers;
 using app.Entidades;
 using auth;
@@ -75,6 +76,16 @@ namespace test
             var ups = ((resultado as OkObjectResult)?.Value as UpsDetalhado)!;
 
             Assert.Equal(24, ups.UpsGeral);
+        }
+
+        [Fact]
+        public async Task CalcularUpsEscolasAsync_QuandoBancoDeDadosEmMemoria_LancaExcecao()
+        {
+            var escolas = new Escola[] { new() { Latitude = 1.1, Longitude = 1.2 } };
+            var filtro = new CalcularUpsEscolasFiltro();
+
+            await Assert.ThrowsAsync<NotSupportedException>(async () =>
+                await upsController.CalcularUpsEscolasAsync(escolas, filtro));
         }
 
         internal new void Dispose()

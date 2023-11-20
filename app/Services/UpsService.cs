@@ -1,4 +1,5 @@
 ﻿using api.Escolas;
+using api.Ups;
 using app.Entidades;
 using Entidades;
 using Repositorio.Interfaces;
@@ -18,7 +19,7 @@ namespace Service
             this.db = db;
         }
 
-        public async Task CalcularUpsEmMassaAsync()
+        public async Task CalcularUpsEmMassaAsyncAntigo()
         {
             var sinistros = await sinistroRepositorio.ObterTodosAsync();
             foreach (var sinistro in sinistros)
@@ -28,12 +29,37 @@ namespace Service
             await db.SaveChangesAsync();
         }
 
+        public async Task CalcularUpsEmMassaAsync()
+        {
+            var filtro = new PesquisaSinistroFiltro
+            {
+                Pagina = 1,
+                ItemsPorPagina = 5000
+            };
+            var itemsProcessados = 0;
+            var totalItems = db.Sinistros.Count();
+            var totalPaginas = Math.Ceiling((float)totalItems / filtro.ItemsPorPagina) + 1;
+            do
+            {
+                // BackgroundJob.Enqueue(() => CalcularUpsDeUmaListaDeSinistros(filtro));
+                await CalcularUpsDeUmaListaDeSinistros(filtro);
+                filtro.Pagina++;
+                itemsProcessados += filtro.ItemsPorPagina;
+            } while (filtro.Pagina != totalPaginas);
+        }
+
+        public async Task CalcularUpsDeUmaListaDeSinistros(PesquisaSinistroFiltro filtro)
+        {
+            var lista = await sinistroRepositorio.ListarPaginadaAsync(filtro);
+            foreach (var sinistro in lista.Items!)
+                sinistro.CalcularUps();
+            await db.SaveChangesAsync();
+        }
+
         public async Task<UpsDetalhado> CalcularUpsEscolaAsync(Escola escola, double raioKm)
         {
             var sinistros = await sinistroRepositorio.ObterTodosAsync();
             var upsDetalhado = new UpsDetalhado();
-
-            // double raio = 2.0; //raio esta em quilometro
 
             Dictionary<int, int> upsPorAno = new()
             {
@@ -48,10 +74,12 @@ namespace Service
             {
                 if (CalcularDistancia(sinistro.Latitude, sinistro.Longitude, escola.Latitude, escola.Longitude) <= raioKm)
                 {
-                    if (upsPorAno.ContainsKey(sinistro.Data.Year)) {
+                    if (upsPorAno.ContainsKey(sinistro.Data.Year))
+                    {
                         upsPorAno[sinistro.Data.Year] += sinistro.Ups ?? 0;
                     }
-                    else {
+                    else
+                    {
                         upsPorAno.Add(sinistro.Data.Year, sinistro.Ups ?? 0);
                     }
                 }
@@ -86,6 +114,33 @@ namespace Service
             var distance = raioTerraEmKm * resultadoFormula;
 
             return distance;
+        }
+
+        public async Task<int[]> CalcularUpsMuitasEscolasAsync(Escola[] escolas, CalcularUpsEscolasFiltro filtro)
+        {
+            uint limite = (uint)DateTime.Now.AddYears(-5).Year;
+            uint ano;
+            if (filtro.DesdeAno == null)
+                ano = limite;
+            else if (filtro.DesdeAno <= limite || filtro.DesdeAno < 0)
+                ano = limite;
+            else
+                ano = (uint)filtro.DesdeAno;
+
+            double raioKm = filtro.RaioKm ?? 2;
+            var upss = new int[escolas.Length];
+
+            // FIXME: Seria melhor que fosse feita apenas uma query para
+            // todas as escolas.
+            for (int i = 0; i < escolas.Length; i++)
+            {
+                var sinistros = await sinistroRepositorio
+                    .ObterAPartirDoAnoDentroDeRaioAsync(escolas[i], raioKm, ano);
+                foreach (var s in sinistros)
+                    upss[i] += s.Ups ?? 0;
+            }
+
+            return upss;
         }
     }
 }

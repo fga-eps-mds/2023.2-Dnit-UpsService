@@ -45,6 +45,7 @@ namespace Repositorio
         {
             var total = await db.Sinistros.CountAsync();
             var sinistros = await db.Sinistros
+                .OrderBy(s => s.Id)
                 .Skip(filtro.ItemsPorPagina * (filtro.Pagina - 1))
                 .Take(filtro.ItemsPorPagina)
                 .ToListAsync();
@@ -55,6 +56,15 @@ namespace Repositorio
         {
             var sinistros = await db.Sinistros.ToListAsync();
             return sinistros;
+        }
+
+        public async Task<List<Sinistro>> ObterAPartirDoAnoDentroDeRaioAsync(Escola escola, double raioKm, uint ano)
+        {
+            var query = from s in db.Sinistros
+                        where s.DataUtc.Year >= ano
+                        where db.CalcularDistancia(s.Latitude, s.Longitude, escola.Latitude, escola.Longitude) <= raioKm
+                        select s;
+            return await query.ToListAsync();
         }
     }
 }

@@ -1,14 +1,42 @@
 version: "3.0"
+
 services:
-  escola-service:
+  ups-service:
     build:
       context: .
     ports:
       - "7085:7085"
-    container_name: UpsService
+    container_name: ups-service
     volumes:
       - ./app:/app/app
       - ./dominio:/app/dominio
       - ./repositorio:/app/repositorio
       - ./service:/app/service
       - ./test:/app/test
+    networks:
+      - dnit-network
+    environment:
+      - MODE=container
+
+
+  dnit-ups-db:
+    container_name: dnit-ups-db
+    image: postgres:15.4
+    restart: always
+    environment:
+      POSTGRES_DB: upsservice
+      POSTGRES_PASSWORD: 1234
+    ports:
+      - "5333:5432"
+    networks:
+      - dnit-network
+    volumes:
+      - pg-data-volume:/var/lib/postgresql/data
+
+volumes:
+  pg-data-volume:
+
+networks:
+  dnit-network:
+    name: dnit-network
+    driver: bridge

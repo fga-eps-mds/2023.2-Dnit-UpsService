@@ -13,14 +13,13 @@ namespace app.Controllers
     {
         private readonly ISinistroService sinistroService;
         private readonly AuthService authService;
-        
+
         public SinistroController(ISinistroService sinistroService, AuthService authService)
         {
             this.sinistroService = sinistroService;
             this.authService = authService;
         }
-        
-        
+
         [Consumes("multipart/form-data")]
         [HttpPost("cadastrarSinistroPlanilha")]
         [Authorize]
@@ -33,7 +32,7 @@ namespace app.Controllers
                     throw new ApiException(ErrorCodes.ArquivoVazio);
 
                 if (arquivo.ContentType.ToLower() != "text/csv")
-                    throw new ApiException(ErrorCodes.ArquivoFormatoInvalido, "Formato deve CSV");
+                    throw new ApiException(ErrorCodes.ArquivoFormatoInvalido, "Formato deve ser CSV");
 
                 using (var memoryStream = new MemoryStream())
                 {
@@ -50,7 +49,7 @@ namespace app.Controllers
                 {
                     await arquivo.CopyToAsync(memoryStream);
                     memoryStream.Seek(0, SeekOrigin.Begin);
-                    sinistroService.CadastrarSinistroViaPlanilha(memoryStream);
+                    await sinistroService.CadastrarSinistroViaPlanilha(memoryStream);
                 }
 
                 return Ok();

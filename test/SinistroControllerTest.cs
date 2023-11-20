@@ -33,7 +33,7 @@ namespace test
             var message = (resultado as BadRequestObjectResult)?.Value as string;
 
             Assert.IsType<BadRequestObjectResult>(resultado);
-            Assert.Equal("Formato deve CSV", message);
+            Assert.Equal("Formato deve ser CSV", message);
         }
 
         [Fact]

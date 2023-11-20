@@ -14,11 +14,17 @@ namespace Service
     {
         private readonly ISinistroRepositorio sinistroRepositorio;
         private readonly AppDbContext db;
+        private readonly IEscolaService escolaService;
 
-        public SinistroService(ISinistroRepositorio sinistroRepositorio, AppDbContext db)
+        public SinistroService(
+            AppDbContext db, 
+            ISinistroRepositorio sinistroRepositorio, 
+            IEscolaService escolaService
+        )
         {
-            this.sinistroRepositorio = sinistroRepositorio;
             this.db = db;
+            this.sinistroRepositorio = sinistroRepositorio;
+            this.escolaService = escolaService;
         }
 
         public bool SuperaTamanhoMaximo(MemoryStream planilha)
@@ -34,7 +40,7 @@ namespace Service
             }
         }
 
-        public void CadastrarSinistroViaPlanilha(MemoryStream planilha)
+        public async Task CadastrarSinistroViaPlanilha(MemoryStream planilha)
         {
             int numeroLinha = 2;
 
@@ -87,13 +93,15 @@ namespace Service
                         }
                         catch (DbUpdateException ex)
                         {
-                            var mensagem = $"Dados já inseridos. Linha {numeroLinha}\n" + 
+                            var mensagem = $"Dados já inseridos. Linha {numeroLinha}\n" +
                                 $"Sinistro: {string.Join(';', linha)}";
                             throw new ApiException(ErrorCodes.DadosJaInseridos, mensagem);
                         }
                     }
                 }
             }
+
+            await escolaService.CalcularNovoRanque();
         }
 
         public async Task<ListaPaginada<Sinistro>> ListarPaginadaAsync(PesquisaSinistroFiltro filtro)
